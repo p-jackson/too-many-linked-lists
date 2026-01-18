@@ -18,13 +18,14 @@ struct Node<T> {
 
 impl<T> Default for List<T> {
     fn default() -> Self {
-        List::new()
+        Self::new()
     }
 }
 
 impl<T> List<T> {
-    pub fn new() -> Self {
-        List {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
             head: None,
             tail: None,
         }
@@ -32,34 +33,29 @@ impl<T> List<T> {
 
     pub fn push_front(&mut self, elem: T) {
         let new_head = Node::new(elem);
-        match self.head.take() {
-            Some(old_head) => {
-                old_head.borrow_mut().prev = Some(new_head.clone());
-                new_head.borrow_mut().next = Some(old_head);
-                self.head = Some(new_head);
-            }
-            None => {
-                self.head = Some(new_head.clone());
-                self.tail = Some(new_head);
-            }
+        if let Some(old_head) = self.head.take() {
+            old_head.borrow_mut().prev = Some(new_head.clone());
+            new_head.borrow_mut().next = Some(old_head);
+            self.head = Some(new_head);
+        } else {
+            self.head = Some(new_head.clone());
+            self.tail = Some(new_head);
         }
     }
 
     pub fn push_back(&mut self, elem: T) {
         let new_tail = Node::new(elem);
-        match self.tail.take() {
-            Some(old_tail) => {
-                old_tail.borrow_mut().next = Some(new_tail.clone());
-                new_tail.borrow_mut().prev = Some(old_tail);
-                self.tail = Some(new_tail);
-            }
-            None => {
-                self.head = Some(new_tail.clone());
-                self.tail = Some(new_tail);
-            }
+        if let Some(old_tail) = self.tail.take() {
+            old_tail.borrow_mut().next = Some(new_tail.clone());
+            new_tail.borrow_mut().prev = Some(old_tail);
+        } else {
+            self.head = Some(new_tail.clone());
         }
+        self.tail = Some(new_tail);
     }
 
+    /// # Panics
+    /// Panics if another strong reference to the popped node exists.
     pub fn pop_front(&mut self) -> Option<T> {
         self.head.take().map(|old_head| {
             match old_head.borrow_mut().next.take() {
@@ -75,6 +71,8 @@ impl<T> List<T> {
         })
     }
 
+    /// # Panics
+    /// Panics if another strong reference to the popped node exists.
     pub fn pop_back(&mut self) -> Option<T> {
         self.tail.take().map(|old_tail| {
             match old_tail.borrow_mut().prev.take() {
@@ -90,6 +88,7 @@ impl<T> List<T> {
         })
     }
 
+    #[must_use]
     pub fn peek_front(&self) -> Option<Ref<'_, T>> {
         self.head
             .as_ref()
@@ -102,6 +101,7 @@ impl<T> List<T> {
             .map(|head| RefMut::map(head.borrow_mut(), |node| &mut node.elem))
     }
 
+    #[must_use]
     pub fn peek_back(&self) -> Option<Ref<'_, T>> {
         self.tail
             .as_ref()
@@ -117,7 +117,7 @@ impl<T> List<T> {
 
 impl<T> Node<T> {
     pub fn new(elem: T) -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Node {
+        Rc::new(RefCell::new(Self {
             elem,
             next: None,
             prev: None,
@@ -131,6 +131,7 @@ impl<T> Drop for List<T> {
     }
 }
 
+#[must_use]
 pub struct IntoIter<T>(List<T>);
 
 impl<T> IntoIterator for List<T> {

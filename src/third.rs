@@ -11,33 +11,38 @@ struct Node<T> {
     next: Link<T>,
 }
 
+#[must_use]
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>,
 }
 
 impl<T> Default for List<T> {
     fn default() -> Self {
-        List::new()
+        Self::new()
     }
 }
 
 impl<T> List<T> {
-    pub fn new() -> Self {
-        List { head: None }
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { head: None }
     }
 
-    pub fn prepend(&self, elem: T) -> List<T> {
+    #[must_use = "Returns reference to new immutable list"]
+    pub fn prepend(&self, elem: T) -> Self {
         let next = self.head.clone();
-        List {
+        Self {
             head: Some(Rc::new(Node { elem, next })),
         }
     }
 
-    pub fn tail(&self) -> List<T> {
+    #[must_use = "Returns reference to new immutable list"]
+    pub fn tail(&self) -> Self {
         let new_head = self.head.as_ref().and_then(|node| node.next.clone());
-        List { head: new_head }
+        Self { head: new_head }
     }
 
+    #[must_use]
     pub fn head(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
     }
@@ -55,7 +60,7 @@ impl<T> Drop for List<T> {
         while let Some(node) = head {
             head = Rc::try_unwrap(node)
                 .ok()
-                .and_then(|mut node| node.next.take())
+                .and_then(|mut node| node.next.take());
         }
     }
 }
@@ -67,6 +72,14 @@ impl<'a, T> Iterator for Iter<'a, T> {
             self.next = node.next.as_deref();
             &node.elem
         })
+    }
+}
+
+impl<'a, T> IntoIterator for &'a List<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 

@@ -1,3 +1,6 @@
+#![allow(clippy::nursery)]
+#![allow(clippy::pedantic)]
+
 #[derive(Debug)]
 pub enum LList<T: Copy> {
     Empty,

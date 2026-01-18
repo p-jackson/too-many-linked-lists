@@ -22,8 +22,9 @@ impl Default for List {
 }
 
 impl List {
-    pub fn new() -> Self {
-        List { head: Link::Empty }
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { head: Link::Empty }
     }
 
     pub fn push(&mut self, elem: i32) {
@@ -55,8 +56,8 @@ impl Drop for List {
 }
 
 impl Link {
-    fn take(&mut self) -> Link {
-        std::mem::replace(self, Link::Empty)
+    const fn take(&mut self) -> Self {
+        std::mem::replace(self, Self::Empty)
     }
 }
 

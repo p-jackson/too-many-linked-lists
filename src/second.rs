@@ -11,12 +11,15 @@ struct Node<T> {
     next: Link<T>,
 }
 
+#[must_use]
 pub struct IntoIter<T>(List<T>);
 
+#[must_use]
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>,
 }
 
+#[must_use]
 pub struct IterMut<'a, T> {
     next: Option<&'a mut Node<T>>,
 }
@@ -28,8 +31,9 @@ impl<T> Default for List<T> {
 }
 
 impl<T> List<T> {
-    pub fn new() -> Self {
-        List { head: None }
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { head: None }
     }
 
     pub fn push(&mut self, elem: T) {
@@ -47,6 +51,7 @@ impl<T> List<T> {
         })
     }
 
+    #[must_use]
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
     }
@@ -73,6 +78,22 @@ impl<T> std::iter::IntoIterator for List<T> {
     type IntoIter = IntoIter<T>;
     fn into_iter(self) -> IntoIter<T> {
         IntoIter(self)
+    }
+}
+
+impl<'a, T> std::iter::IntoIterator for &'a List<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+    fn into_iter(self) -> Iter<'a, T> {
+        self.iter()
+    }
+}
+
+impl<'a, T> std::iter::IntoIterator for &'a mut List<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+    fn into_iter(self) -> IterMut<'a, T> {
+        self.iter_mut()
     }
 }
 
@@ -158,8 +179,8 @@ mod tests {
         assert_eq!(list.peek(), Some(&3));
         assert_eq!(list.peek_mut(), Some(&mut 3));
         if let Some(value) = list.peek_mut() {
-            *value = 42
-        };
+            *value = 42;
+        }
 
         assert_eq!(list.peek(), Some(&42));
         assert_eq!(list.pop(), Some(42));
